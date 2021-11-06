@@ -13,6 +13,7 @@ import java.nio.ByteBuffer
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import kotlin.collections.HashMap
 import kotlin.system.measureTimeMillis
 
@@ -106,7 +107,6 @@ internal class Database(dir: File, options: Options) {
     }
 
     fun close(){
-        val wait = CompletableFuture<Void>()
         submit {
             locks.forEach{
                 val uuid = it.key
@@ -114,11 +114,10 @@ internal class Database(dir: File, options: Options) {
                 pushUUID(uuid, uuidBuf)
                 caching{database.put(uuidBuf.array(), encode(it.value))}?.printStackTrace()
             }
-            database.close()
-            wait.complete(null)
+            caching{database.close()}?.printStackTrace()
         }
         executor.shutdown()
-        wait.get()
+        executor.awaitTermination(1, TimeUnit.DAYS)
     }
 
     fun delete(uuid: UUID){

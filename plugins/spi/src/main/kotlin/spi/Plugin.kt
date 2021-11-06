@@ -223,7 +223,7 @@ internal fun load(plugin: LoaderPlugin){
 }
 
 @Unload
-private fun unload(){
+internal fun unload(){
     if(config.client) {
         val client = TowerConnect(plu)!!
         onlinePlayers.forEach{client.send(Unlock(it.uuid))}

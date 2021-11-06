@@ -10,6 +10,7 @@ import kotlinx.serialization.serializer
 import pluginloader.api.Load
 import pluginloader.api.LoaderPlugin
 import java.io.File
+import java.nio.file.Files
 
 @Serializable
 private data class Config(val dir: String = "conf", val uniquePaths: Map<String, String> = emptyMap(), val yaml: Boolean = false)
@@ -24,9 +25,8 @@ private fun conf(name: String, extension: String): String? {
 private fun conf(name: String, extension: String, text: String) {
     val file = getConf(name, extension)
     if(!file.exists()){
-        file.parentFile.mkdirs()
-        file.parentFile.mkdir()
-        file.createNewFile()
+        Files.createDirectories(file.parentFile.toPath())
+        Files.createFile(file.toPath())
     }
     file.writeText(text)
 }

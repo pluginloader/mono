@@ -25,21 +25,3 @@ internal fun drag(event: InventoryDragEvent){
         event.cancel()
     }
 }
-
-@Listener
-internal fun close(event: InventoryCloseEvent){
-    val player = event.player
-    event.view.cursor.nonNull {
-        player.inventory.addItem(it)
-        event.view.cursor = null
-    }
-}
-
-@Listener
-internal fun open(event: InventoryOpenEvent){
-    val player = event.player
-    event.view.cursor.nonNull {
-        player.inventory.addItem(it)
-        event.view.cursor = null
-    }
-}

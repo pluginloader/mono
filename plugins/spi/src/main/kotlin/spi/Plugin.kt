@@ -5,7 +5,6 @@ import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import org.bukkit.Bukkit
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.iq80.leveldb.Options
@@ -13,7 +12,6 @@ import pluginloader.api.*
 import tower.api.*
 import java.io.File
 import java.util.*
-import javax.xml.parsers.DocumentBuilderFactory
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
@@ -175,9 +173,8 @@ internal fun load(plugin: LoaderPlugin){
         }
         caching {
             if (config.lockSupport && plugin is Plugin) {
-                BukkitLocks.join = { client.send(Lock(it)) }
-                BukkitLocks.quit = { client.send(Unlock(it)) }
-                plugin.load(BukkitLocks::class)
+                plugin.registerListener(PlayerJoinEvent::class, {client.send(Lock(it.uuid))})
+                plugin.registerListener(PlayerQuitEvent::class, {client.send(Unlock(it.uuid))})
                 plugin.registerCommand("spi", { sender, args ->
                     if (sender.isNotOp) return@registerCommand
                     val uuid = UUID.fromString(args[0])
@@ -275,20 +272,3 @@ internal class Config(
         val serverSharing: Boolean = false,
         val serverSharingTypes: Set<String> = setOf()
 )
-
-private object BukkitLocks{
-    var join: ((UUID) -> Unit)? = null
-    var quit: ((UUID) -> Unit)? = null
-
-    @JvmStatic
-    @Listener
-    private fun onJoin(event: PlayerJoinEvent){
-        join.nonNull{it(event.uuid)}
-    }
-
-    @JvmStatic
-    @Listener
-    private fun onQuit(event: PlayerQuitEvent){
-        quit.nonNull{runTaskLater(config.timingsBeforeQuit){it(event.uuid)}}
-    }
-}

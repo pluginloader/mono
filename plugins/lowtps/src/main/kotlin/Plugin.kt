@@ -1,6 +1,6 @@
 package lowtps
 
-import cmdhelp.execute
+import cmdexec.Commands
 import configs.Conf
 import kotlinx.serialization.Serializable
 import org.bukkit.Bukkit
@@ -13,10 +13,10 @@ internal var config = Config()
 private lateinit var task: BukkitTask
 
 @Load
-internal fun load(){
+internal fun load(plugin: LoaderPlugin){
     task = runTaskTimer(config.time){
         if(Bukkit.getTPS()[1] >= config.tps)return@runTaskTimer
-        config.commands.execute()
+        config.commands.exec(plugin)
 	    if(config.callOnce)task.cancel()
     }
 }
@@ -31,5 +31,5 @@ internal class Config(
 	val time: Int = 14000, 
 	val tps: Int = 5,
 	val callOnce: Boolean = true,
-	val commands: List<String> = listOf("!cmd on low tps"),
+	val commands: Commands = Commands(listOf("!cmd on low tps")),
 )

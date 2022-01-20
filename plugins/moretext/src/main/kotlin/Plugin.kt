@@ -13,17 +13,7 @@ internal var config = Config()
 internal fun load(plugin: Plugin){
     config.texts.forEach{entry -> plugin.registerCommand(entry.key, {sender, args ->
         val player = Bukkit.getPlayer(args[0]) ?: return@registerCommand
-        var str = ""
-        var first = true
-        for(i in 1 until args.size){
-            if(first){
-                first = false
-            }else{
-                str += " "
-            }
-            str += args[i]
-        }
-        player.sendMessage(entry.value + str)
+        player.sendMessage(entry.value + args.drop(1).joinToString(" "))
     }, true)}
 }
 

@@ -1,17 +1,20 @@
 package randombylist
 
-import cmdhelp.execute
+import cmdexec.Commands
 import configs.Conf
 import kotlinx.serialization.Serializable
 import org.bukkit.Bukkit
-import pluginloader.api.Args
-import pluginloader.api.Color
-import pluginloader.api.Command
-import pluginloader.api.Sender
+import pluginloader.api.*
 import kotlin.random.Random
 
 @Conf
 internal var config = Config()
+private lateinit var plu: LoaderPlugin
+
+@Load
+internal fun load(plugin: LoaderPlugin){
+    plu = plugin
+}
 
 private val prefix = "§8[§aPlu§8]§f"
 
@@ -28,12 +31,12 @@ internal fun cmd(sender: Sender, args: Args){
     type.forEach{
         i -= it.key
         if(i <= 0){
-            it.value.execute{cmd -> if(player != null)cmd.replace("%player%", player.name) else cmd}
+            it.value.exec(plu){replace("%player%", player?.name ?: "%%%")}
             return
         }
     }
 }
 
 @Serializable
-internal class Config(val randomCommands: Map<String, Map<Int, List<String>>> =
-    mapOf("nekopara" to mapOf(1000000 to listOf("text %player% 1"), 1000001 to listOf("text %player% 2"))))
+internal class Config(val randomCommands: Map<String, Map<Int, Commands>> =
+    mapOf("nekopara" to mapOf(1000000 to Commands(listOf("text %player% 1")), 1000001 to Commands(listOf("text %player% 2")))))

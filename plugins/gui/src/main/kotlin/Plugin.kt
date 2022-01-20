@@ -1,6 +1,6 @@
 package gui
 
-import cmdhelp.execute
+import cmdexec.Commands
 import kotlinx.serialization.Serializable
 import org.bukkit.Bukkit
 import org.bukkit.Material
@@ -29,7 +29,8 @@ data class ConfigInventory(
         val active = ActiveInventory(inventory, context, size)
         auto.forEach{
             val commands = autoCmd[it.key]
-            active.fill(it.key, it.value.item()){commands.nonNull{cmd -> cmd.execute(it.whoClicked as Player)}}
+            val compile = if(commands == null) null else Commands(commands)
+            active.fill(it.key, it.value.item()){event -> compile?.exec(plu, event.whoClicked as Player)}
         }
         return active
     }
@@ -74,6 +75,12 @@ class ActiveInventory(private val inventory: Inventory, context: List<String>, s
 }
 
 private val opened = HashMap<Inventory, ActiveInventory>()
+private lateinit var plu: LoaderPlugin
+
+@Load
+internal fun load(plugin: LoaderPlugin){
+    plu = plugin
+}
 
 @Listener
 internal fun event(event: InventoryCloseEvent) = runTaskLater(1) {

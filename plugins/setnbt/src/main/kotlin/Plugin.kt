@@ -1,9 +1,12 @@
 package setnbt
 
 import org.bukkit.entity.Player
-import pluginloader.api.Args
-import pluginloader.api.Command
+import org.bukkit.inventory.ItemStack
+import pluginloader.api.*
 import pluginloader.api.bukkit.NBT
+import pluginloader.api.bukkit.NBT.Companion.readNBT
+import pluginloader.api.bukkit.NBT.Companion.writeNBT
+import java.lang.reflect.Method
 
 private const val prefix = "§8[§aPlu§8]§f"
 
@@ -15,6 +18,25 @@ internal fun cmd(player: Player, args: Args){
     }
     val item = player.inventory.itemInMainHand
     val str = args.joinToString(" ")
+    if(str.startsWith("{")){
+        caching {
+            val containerClazz = Class.forName("pluginloader.internal.nbtapi.NBTContainer")
+            val newStr = "{id:\"minecraft:stone\",Count:1b,tag:{" + str.substring(1, str.length - 1) + "}}"
+            val container = containerClazz.getConstructor(String::class.java).newInstance(newStr)
+            var method: Method? = null
+            Class.forName("pluginloader.internal.nbtapi.NBTItem").declaredMethods.forEach{
+                if(it.name == "convertNBTtoItem")method = it
+            }
+            val i = method!!.invoke(null, container) as ItemStack
+            val nbt = i.readNBT()
+            nbt.writeTo(item)
+            player.sendMessage("$prefix Inserted input nbt to item")
+        }.nonNull {
+            it.printStackTrace()
+            player.sendMessage("$prefix Some errors")
+        }
+        return
+    }
     val sep = str.indexOf(':')
     val key = str.substring(0, sep)
     val value = str.substring(sep + 1, str.length)

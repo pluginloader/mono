@@ -1,5 +1,5 @@
 plugins{
-    id("pluginloader.gradle") version("1.10.0")
+    id("io.github.pluginloader.gradle") version("1.11.10")
 }
 
 repositories {
@@ -10,10 +10,9 @@ dependencies {
     compileOnly("com.github.MilkBowl:VaultAPI:1.7")
 }
 
-group = "pluginloader"
+group = "io.github.pluginloader"
 version = "1.0.0"
 
 plu.paper("1.12.2")
-//plu.private()
-plu.plu("provide")
-//plu.public()
+plu.central("provide")
+plu.public()

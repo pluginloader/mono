@@ -6,7 +6,6 @@ import kotlinx.serialization.builtins.ListSerializer
 import metadata.MetadataStorage
 import metadata.metadata
 import org.bukkit.Bukkit
-import org.bukkit.entity.Player
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import pluginloader.api.*
@@ -110,7 +109,7 @@ private fun calculate(uuid: UUID, type: String, input: Double): Double{
         if(call) playerListener.forEach{calling -> calling(type, uuid)}
     }}}
     listenBoosters.forEach{caching {bst = it(uuid, type, bst)}}
-    multiplyBoosters.nonNull{bst *= 1.0 + it.sumByDouble{boost -> boost.boost}}
+    multiplyBoosters.nonNull{bst *= 1.0 + it.sumOf{boost -> boost.boost}}
     return input * bst
 }
 

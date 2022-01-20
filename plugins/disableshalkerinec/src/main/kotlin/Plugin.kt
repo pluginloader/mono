@@ -1,6 +1,6 @@
 package disableshalkerinec
 
-import cmdhelp.execute
+import cmdexec.Commands
 import configs.Conf
 import kotlinx.serialization.Serializable
 import org.bukkit.Material
@@ -10,9 +10,17 @@ import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryDragEvent
 import org.bukkit.event.inventory.InventoryType
 import pluginloader.api.Listener
+import pluginloader.api.Load
+import pluginloader.api.LoaderPlugin
 
 @Conf
 internal var config = Config()
+private lateinit var plu: LoaderPlugin
+
+@Load
+internal fun load(plugin: LoaderPlugin){
+    plu = plugin
+}
 
 @Listener
 internal fun onDrag(event: InventoryDragEvent) {
@@ -20,12 +28,12 @@ internal fun onDrag(event: InventoryDragEvent) {
     var stack = event.cursor
     if (stack != null && stack.type != null && isShulker(stack.type)) {
         event.isCancelled = true
-        config.commandsOnTry.execute(event.whoClicked as Player)
+        config.commandsOnTry.exec(plu, event.whoClicked as Player)
         return
     }
     stack = event.oldCursor
     if (stack != null && stack.type != null && isShulker(stack.type)) {
-        config.commandsOnTry.execute(event.whoClicked as Player)
+        config.commandsOnTry.exec(plu, event.whoClicked as Player)
         event.isCancelled = true
     }
 }
@@ -40,14 +48,14 @@ internal fun onClick(event: InventoryClickEvent) {
         else if (event.isShiftClick) stack = event.currentItem
         if (stack == null || stack.type == null) return
         if (isShulker(stack.type)) {
-            config.commandsOnTry.execute(event.whoClicked as Player)
+            config.commandsOnTry.exec(plu, event.whoClicked as Player)
             event.isCancelled = true
         }
     }
 }
 
 @Serializable
-internal class Config(val commandsOnTry: List<String> = listOf("text %player% shulker blocked"))
+internal class Config(val commandsOnTry: Commands = Commands(listOf("text %player% shulker blocked")))
 
 private fun isShulker(material: Material): Boolean {
     return when (material) {

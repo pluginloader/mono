@@ -1,10 +1,8 @@
 package guicommand
 
-import cmdhelp.execute
+import cmdexec.Commands
 import configs.Conf
 import gui.ConfigInventory
-import guicommand.Config
-import guicommand.config
 import kotlinx.serialization.Serializable
 import money.Money
 import morestats.Stats
@@ -33,19 +31,19 @@ internal fun load(plugin: Plugin){
                     item.needStats?.forEach{entry ->
                         if(entry.key == "money"){
                             if(!Money.has(player, entry.value.count)){
-                                entry.value.error.execute(player)
+                                entry.value.error.exec(plugin, player)
                                 return@fill
                             }
                         }else{
                             if(stats.get(player.uuid, entry.key) < entry.value.count){
-                                entry.value.error.execute(player)
+                                entry.value.error.exec(plugin, player)
                                 return@fill
                             }
                         }
                     }
 
                     item.needStats?.get("money").nonNull{stat -> Money.withdraw(player, stat.count)}
-                    item.commands.execute(player)
+                    item.commands.exec(plugin, player)
                 }
             }
             active.open(player)
@@ -69,12 +67,12 @@ internal class GUI(
 internal class CommandItem(
     val char: Char = 'a',
     val item: Item = Item().type(Material.GOLD_SWORD).name("§6Нажми"),
-    val commands: List<String> = listOf("!onclick"),
+    val commands: Commands = Commands(listOf("!onclick")),
     val needStats: Map<String, Stat>? = mapOf("level" to Stat())
 )
 
 @Serializable
 internal class Stat(
     val count: Double = 1.0,
-    val error: List<String> = listOf("et %player% Не хватает уровня")
+    val error: Commands = Commands(listOf("et %player% Не хватает уровня"))
 )

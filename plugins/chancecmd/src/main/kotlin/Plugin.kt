@@ -1,17 +1,20 @@
 package chancecmd
 
-import cmdhelp.execute
+import cmdexec.Commands
 import configs.Conf
 import kotlinx.serialization.Serializable
 import org.bukkit.Bukkit
-import pluginloader.api.Args
-import pluginloader.api.Color
-import pluginloader.api.Command
-import pluginloader.api.Sender
+import pluginloader.api.*
 import kotlin.random.Random
 
 @Conf
 internal var config = Config()
+private lateinit var plu: LoaderPlugin
+
+@Load
+internal fun load(plugin: LoaderPlugin){
+    plu = plugin
+}
 
 @Command("chancecmd", op = true)
 internal fun chancecmd(sender: Sender, args: Args){
@@ -23,8 +26,8 @@ internal fun chancecmd(sender: Sender, args: Args){
     val cmd = config.mapping[args[1]] ?: return
     val chance = args[2].toDouble()
     if(chance <= Random.nextDouble(0.0, 100.0))return
-    cmd.execute(player)
+    cmd.exec(plu, player)
 }
 
 @Serializable
-internal class Config(val mapping: Map<String, List<String>> = mapOf("type" to listOf("text %player% random!")))
+internal class Config(val mapping: Map<String, Commands> = mapOf("type" to Commands(listOf("text %player% random!"))))

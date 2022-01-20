@@ -1,6 +1,6 @@
 package commandsbytime
 
-import cmdhelp.execute
+import cmdexec.Commands
 import configs.Conf
 import kotlinx.serialization.Serializable
 import pluginloader.api.*
@@ -42,13 +42,13 @@ internal fun load(plugin: Plugin){
         commands.forEach{
             if(it.called.get())return@forEach
             if(it.hour != time.hour || it.minute != time.minute)return@forEach
-            it.commands.execute { i -> i }
+            it.commands.exec(plugin)
             it.called.set(true)
         }
     })
 }
 
-private class TimeCommand(val hour: Int, val minute: Int, val commands: List<String>, var called: AtomicBoolean = AtomicBoolean(false))
+private class TimeCommand(val hour: Int, val minute: Int, val commands: Commands, var called: AtomicBoolean = AtomicBoolean(false))
 
 @Serializable
 internal class Config(
@@ -58,7 +58,7 @@ internal class Config(
 
 @Serializable
 internal class Timer(
-        val commands: List<String> = listOf("!wtf keeek"),
-        val perMinuteInHour: IntArray = intArrayOf(3),
-        val per: List<String> = listOf("3:00")
+    val commands: Commands = Commands(listOf("!cmd")),
+    val perMinuteInHour: IntArray = intArrayOf(3),
+    val per: List<String> = listOf("3:00")
 )

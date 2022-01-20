@@ -1,38 +1,43 @@
 package tower.test
 
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import tower.impl.Client
-import tower.impl.InitPacket
-import tower.impl.Server
+import org.junit.jupiter.api.Test
+import tower.impl.*
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.system.exitProcess
 
-@Serializable
-private data class JsonPacket(val id: String, val json: String)
-
-fun main() {
-    println(JsonPacket::class.java.canonicalName)
-    if(true)return
-    val packet = JsonPacket("data", "{\"id\":\"save\",\"data\":\"{\\\"table\\\":\\\"morestats\\\",\\\"uuid\\\":{\\\"least\\\":-9113846697860385283,\\\"most\\\":-614855475102805527},\\\"data\\\":[123,34,115,116,97,116,115,34,58,123,34,108,101,118,101,108,34,58,49,46,48,125,125]}\"}")
-    println(Json.encodeToString(JsonPacket.serializer(), packet))
-    if(true)return
-    val tower = Server(4444){channel, packet ->
-        println("Server recived $packet")
-        channel.writeAndFlush(packet)
-    }
-    Thread(tower).start()
-    Thread.sleep(2000)
-    repeat(30) {
-        Thread {
-            var client: Client? = null
-            client = Client("localhost", 4444, { println("Client recieved $it") }) {
-                println("write lol")
-                it.channel().writeAndFlush(InitPacket("lol"))
-                Thread.sleep(1000)
-                client?.close()
+class NetworkTest{
+    private val disable = true
+    //Disabled by reason of bad firewall, using for tests
+    @Test
+    fun test(){
+        if(disable)return
+        val counter = AtomicInteger(0)
+        val tower = Server(4444){channel, packet -> channel.writeAndFlush(packet)}
+        tower.startSync()
+        val clientCount = 20
+        repeat(clientCount) {
+            Thread {
+                var client: Client? = null
+                val future = CompletableFuture<Void>()
+                client = Client("localhost", 4444, {client!!.close()}, {
+                    it.channel().writeAndFlush(InitPacket("lol"))
+                    future.complete(null)
+                })
+                client.startSync()
+                future.get()
+                client.close()
+            }.start()
+        }
+        val count = clientCount * 4
+        var time = 0
+        while (counter.get() != clientCount * 2) {
+            if(time++ == count){
+                println("Timeout :/")
+                exitProcess(-1)
             }
-            client.connect()
-        }.start()
+            Thread.sleep(10)
+        }
+        tower.close()
     }
-    Thread.sleep(2000)
-    tower.close()
 }

@@ -30,7 +30,7 @@ internal fun cmd(event: PlayerCommandPreprocessEvent){
         val bug = event.message.indexOf(':')
         val start = if (bug == -1) 1 else bug + 1
         val end = event.message.indexOf(' ')
-        val cmd = event.message.substring(start, if (end == -1) event.message.length else end).toLowerCase()
+        val cmd = event.message.substring(start, if (end == -1) event.message.length else end).lowercase()
         val found = command[cmd] ?: return
         val map = cd[event.player.uuid] ?: HashMap()
         val cooldownEnd = map.getOrDefault(found, 0)

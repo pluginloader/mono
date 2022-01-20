@@ -4,7 +4,6 @@ import configs.Conf
 import io.netty.channel.Channel
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import org.omg.PortableInterceptor.RequestInfo
 import pluginloader.api.*
 import tower.impl.*
 import java.lang.reflect.Field
@@ -150,11 +149,6 @@ value class OldTower(val connect: TowerConnect){
             = connect.registerCallback("$sharedID.${I::class.java.name}", "$sharedID.${O::class.java.name}", plugin, I::class, iSerializer, O::class, oSerializer, callback)
 }
 
-@JvmInline
-value class NewTower(val connect: TowerConnect){
-
-}
-
 interface TowerServer{
     val map: Map<String, TowerConnect>
 
@@ -187,7 +181,10 @@ internal fun unload(){
 internal fun load(plugin: LoaderPlugin) {
     if (config.client.enabled) {
         client = Client(config.client.host, config.client.port,
-            {plugin.task{defaultConnection!!(it)}}) {it.channel().writeAndFlush(InitPacket("client${Random.nextLong()}"))}
+            {plugin.task{defaultConnection!!(it)}}, {
+                it.channel().writeAndFlush(ProtocolLevelReqPacket(ProtocolLevel.FIRST.ordinal))
+                it.channel().writeAndFlush(InitPacket("client${Random.nextLong()}"))
+            })
         client!!.connect()
         defaultConnection = TowerConnectImpl({client!!.writeAndFlush(it)}, onClose = {
             plugin.task {

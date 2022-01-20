@@ -20,8 +20,6 @@ disableitemdrop - Запрещает выбрасывать вещи <br />
 disablemobexp - Отключает опыт с мобов <br />
 disablepearl - Запрещает использовать эндер жемчуг <br />
 disableshalkerinec - Запрещает ложить шалкеры в эндер сундук <br />
-executeall - Выполняет команду для всех игроков <br />
-gcmd - Выполнение команды на всех серверах <br />
 guicommand - Кастомные меню <br />
 hideall - Скрывает всех игроков <br />
 itemcommand - Выполнение команд при клике предметом <br />
@@ -38,16 +36,12 @@ removequitmsg - Убирает сообщение о выходе <br />
 scrmsg - Команда для отправки тайтлов и экшен баров <br />
 setcustomname - Установка кастомного имени игроку <br />
 setnbt - Добавление NBT предмету в руке /setnbt <br />
-softeco - Выдача денег с уведомлением <br />
 sound - Проигрывание звука игроку <br />
 statsdeath - Добавляет в статистику смерти <br />
 statskill - Добавляет в статистику убийства <br />
-syncdir - Копирование папок <br />
-timety - Выполнение команд через указанное количество тиков <br />
 texttower - Межсерверный чат <br />
 trash - /мусорка, удаление лишних предметов <br />
 triggermsg - Выполнение команд при словах в чате <br />
-trueop - Выдает /op на всех серверах <br />
 withoutsnow - Отключает появление блоков снега при снегопаде <br />
 worldgen - Генерирует мир <br />
 <br />
@@ -59,9 +53,9 @@ gui - Создание гуи ConfigInventory <br />
 money - Управление балансом Money <br />
 booster - Бустеры, /booster <br />
 playerinfo - Получение читаемого имени игрока, суффиксы, префиксы, ник. PlayerReadable <br />
-provide - Смотри исходники chat <br />
+provide - Смотри исходники text <br />
 text - Всякое связанное с отправкой текста <br />
-cmdhelp - ```listOf("text %player% lol").execute(player)``` <br />
+cmdexec - ```Commands(listOf("text %player% lol")).exec(plugin, player)``` <br />
 readablelong - ```100000000L.readable()``` -> 100,000,000 <br />
 morestats - Статистика по каждому игроку /morestats, @StatsAPI <br />
 spi - Хранение данных о игроке, смотри morestats <br />

@@ -187,6 +187,8 @@ internal class TowerConnectImpl(val sendPacket: (SystemPacket) -> Unit,
                 val decoded = Json.decodeFromString(serializers[kClass]!!, packet.data)
                 dataListen[kClass]!!(decoded)
             }
+            is ProtocolLevelReqPacket -> error("")
+            is ProtocolLevelResPacket -> error("")
         }
     }
 }

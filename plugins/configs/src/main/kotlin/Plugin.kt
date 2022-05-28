@@ -1,10 +1,10 @@
 package configs
 
-import com.charleskorn.kaml.*
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
+import ksyml.decodeYaml
+import ksyml.yaml
 import org.snakeyaml.engine.v2.api.LoadSettings
-import org.snakeyaml.engine.v2.nodes.*
 import pluginloader.api.*
 import java.io.File
 import java.lang.StringBuilder
@@ -35,6 +35,9 @@ private data class Config(
 private var config: Config = Config()
 private val inlines = HashMap<String, (String) -> String>()
 private val inlineSources = HashMap<String, Pair<() -> Unit, List<String>>>()
+
+@Plu
+internal lateinit var plu: LoaderPlugin
 
 private fun conf(name: String, extension: String): String? {
     val file = getConf(name, extension)
@@ -77,20 +80,16 @@ private fun getConf(name: String, extension: String): File {
 @InternalSerializationApi
 @Load
 internal fun load(plugin: LoaderPlugin){
-    config = plugin.readConfig(Config.serializer()){config}
+    config = plugin.conf(::Config)
     plugin.fieldReplacer<Conf, Any>(Conf::class){loaderPlugin, _, conf ->
-        try {
-            val serializer = conf::class.serializer()
-            val value = loaderPlugin.readConfig(serializer)
-            if (value == null) {
-                @Suppress("UNCHECKED_CAST")
-                loaderPlugin.writeConfig(serializer as KSerializer<Any>, conf)
-                return@fieldReplacer conf
-            }
-            return@fieldReplacer value
-        }catch (ex: Throwable){
-            throw object: java.lang.Throwable("Plugin: ${loaderPlugin.name} failed load config ${ex.message}", null, false, false){} as Throwable
+        val serializer = conf::class.serializer()
+        val value = loaderPlugin.readConfig(serializer)
+        if (value == null) {
+            @Suppress("UNCHECKED_CAST")
+            loaderPlugin.writeConfig(serializer as KSerializer<Any>, conf)
+            return@fieldReplacer conf
         }
+        return@fieldReplacer value
     }
     File(config.dir).mkdirs()
     config.inlineDirs.forEach{
@@ -159,9 +158,7 @@ private fun readInline(name: String, file: File){
     caching{
         val json = yamlToJson(file.readText())
         inlineSources[name] = Pair({readInline(name, file)}, ArrayList(json.keys))
-        json.forEach{entry ->
-            inlines[entry.key] = {entry.value.toString()}
-        }
+        json.forEach{entry -> inlines[entry.key] = {entry.value.toString()}}
     }?.printStackTrace()
 }
 
@@ -174,11 +171,13 @@ private val json = Json{
     encodeDefaults = true
 }
 
-private val YAML = Yaml(configuration = YamlConfiguration(extensionDefinitionPrefix = "x-", strictMode = true))
-
 fun <T> LoaderPlugin.writeConfig(serializer: KSerializer<T>, value: T){
-    if(config.yaml)conf(this.name, "yml", YAML.encodeToString(serializer, value))
+    if(config.yaml)conf(this.name, "yml", yaml.encodeToString(serializer, value))
     else conf(this.name, "json", json.encodeToString(serializer, value))
+}
+
+inline fun <reified T> LoaderPlugin.conf(default: () -> T): T {
+    return readConfig(serializer(), default)
 }
 
 inline fun <reified T> LoaderPlugin.readConfig(serializer: KSerializer<T>, default: () -> T): T{
@@ -193,12 +192,28 @@ inline fun <reified T> LoaderPlugin.readConfig(serializer: KSerializer<T>, defau
 
 private fun preprocessYml(yaml: String): String{
     val editedYaml: String
-    if(!yaml.contains('<'))editedYaml = yaml
+    if(!yaml.contains('<') && !yaml.contains("§x"))editedYaml = yaml
     else {
         val builder = StringBuilder(yaml.length)
         val buffer = StringBuilder()
         var bufferStarted = false
+        var colors = 0
+        var pre = false
         yaml.toCharArray().forEach {
+            if(colors != 0){
+                if(bufferStarted){
+                    buffer.append('§').append(it)
+                }else{
+                    builder.append('§').append(it)
+                }
+                colors--
+                return@forEach
+            }
+            if(pre){
+                if(it == 'x') colors = 6
+                pre = false
+            }
+            if(it == '§') pre = true
             if (bufferStarted) {
                 if (it == '\n' || it == '\r') {
                     builder.append('<').append(buffer).append(it)
@@ -238,7 +253,7 @@ fun <T> LoaderPlugin.readConfig(serializer: KSerializer<T>): T?{
     if(config.yaml){
         if(text == null){
             val yaml = conf(this.name, "yml") ?: return null
-            return YAML.decodeFromString(serializer, preprocessYml(yaml))
+            return plu.decodeYaml(preprocessYml(yaml), serializer, this.name + ".yml")
         }else{
             getConf(this.name, "json").apply{renameTo(File(parentFile, "$name.backup"))}
             val value = Json.decodeFromString(serializer, text)

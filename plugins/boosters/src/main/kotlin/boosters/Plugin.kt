@@ -2,31 +2,23 @@ package boosters
 
 import booster.boostInfo
 import configs.Conf
+import configs.conf
 import kotlinx.serialization.Serializable
-import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import pluginloader.api.*
 
-@Conf
-internal var config = Config()
-private lateinit var plugin: LoaderPlugin
-
 @Load
-internal fun load(plu: LoaderPlugin){
-    plugin = plu
-}
-
-@Command("boosters")
-internal fun cmd(player: Player, args: Args){
-    var pl = player
-    if(args.isNotEmpty() && player.isOp){
-        pl = Bukkit.getPlayer(args[0])
-    }
-    plugin.boostInfo(pl.uuid).nonNull { list ->
+internal fun Plugin.load(){
+    val config = conf(::Config)
+    command(name = "boosters"){player, args ->
+        player as Player
+        var pl = player
+        if(pl.isOp && args.isNotEmpty()) pl = args.player(pl, 0) ?: return@command
+        val info = boostInfo(pl.uuid) ?: return@command
         val infinity = HashMap<String, Double>()
         val timed = ArrayList<Triple<String, Double, Int>>()
         var ok = false
-        list.forEach {
+        info.forEach {
             if(it.end())return@forEach
             config.mapping[it.type] ?: return@forEach
             ok = true
@@ -38,25 +30,25 @@ internal fun cmd(player: Player, args: Args){
         }
         if(!ok){
             pl.sendMessage(config.none)
-            return
+            return@command
         }
         infinity.forEach{
             pl.sendMessage(config.message
-                    .replace("%type%", (config.mapping[it.key] ?: error("")) + " ${it.value.toInt()}.${(it.value * 10).toInt()}")
-                    .replace("%time%", config.infinity))
+                .replace("%type%", (config.mapping[it.key] ?: error("")) + " ${it.value.toInt()}.${(it.value * 10).toInt()}")
+                .replace("%time%", config.infinity))
         }
         for((type, boost, minutes) in timed){
             pl.sendMessage(config.message.replace("%type%", (config.mapping[type] ?: error("")) + " ${boost.toInt()}.${(boost * 10).toInt()}")
-                    .replace("%time%", config.time.replace("%time%", minutes.toString())))
+                .replace("%time%", config.time.replace("%time%", minutes.toString())))
         }
     }
 }
 
 @Serializable
-internal class Config(
-    val infinity: String = "вечность",
-    val time: String = "%time% минут",
-    val none: String = "§8[§ci§8]§f У тебя нет активных бустеров",
-    val message: String = "§8[§ai§8]§f Бустер %type%, длится %time%",
-    val mapping: Map<String, String> = mapOf("level" to "уровней")
-)
+internal class Config {
+    val infinity = "eternity"
+    val time = "%time% minute(s)"
+    val none = "§8[§ci§8]§f You have no active boosters"
+    val message = "§8[§ai§8]§f Booster %type%, lasts %time%"
+    val mapping = mapOf("level" to "levels")
+}

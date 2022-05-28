@@ -2,41 +2,34 @@ package randombylist
 
 import cmdexec.Commands
 import configs.Conf
+import configs.conf
 import kotlinx.serialization.Serializable
 import org.bukkit.Bukkit
 import pluginloader.api.*
 import kotlin.random.Random
 
-@Conf
-internal var config = Config()
-private lateinit var plu: LoaderPlugin
-
 @Load
-internal fun load(plugin: LoaderPlugin){
-    plu = plugin
-}
-
-private val prefix = "§8[§aPlu§8]§f"
-
-@Command("randombylist", op = true)
-internal fun cmd(sender: Sender, args: Args){
-    if(args.isEmpty()){
-        sender.sendMessage("$prefix Usage: §6/randombylist [type] {player}")
-        return
-    }
-    val type = config.randomCommands[args[0]] ?: return
-    val player = if(args.size == 1) null else Bukkit.getPlayer(args[1])
-    var i = Random.nextInt(type.keys.sum() + 1)
-    sender.sendMessage("$prefix Execute §6'${args[1]}'")
-    type.forEach{
-        i -= it.key
-        if(i <= 0){
-            it.value.exec(plu){replace("%player%", player?.name ?: "%%%")}
-            return
+internal fun Plugin.load(){
+    val config = conf(::Config)
+    val plu = this
+    command(checkOp = true, name = "randombylist"){sender, args ->
+        args.use(sender, 1, "randombylist [type] {player}") ?: return@command
+        val type = args.cantFind(sender, config.randomCommands[args[0]], "random command", args[0]) ?: return@command
+        val player = if(args.size == 1) null else args.player(sender, 1) ?: return@command
+        var i = Random.nextInt(type.keys.sum() + 1)
+        sender.sendMessage("$prefix Execute §6'${args[1]}'")
+        type.forEach{
+            i -= it.key
+            if(i <= 0){
+                it.value.exec(plu){replace("%player%", player?.name ?: "%%%")}
+                return@command
+            }
         }
     }
 }
 
 @Serializable
-internal class Config(val randomCommands: Map<String, Map<Int, Commands>> =
-    mapOf("nekopara" to mapOf(1000000 to Commands(listOf("text %player% 1")), 1000001 to Commands(listOf("text %player% 2")))))
+internal class Config{val randomCommands = mapOf("nekopara" to mapOf(
+    1000000 to Commands("text %player% 1"),
+    1000001 to Commands("text %player% 2")
+))}

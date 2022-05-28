@@ -1,7 +1,7 @@
 package commandsbytime
 
 import cmdexec.Commands
-import configs.Conf
+import configs.conf
 import kotlinx.serialization.Serializable
 import pluginloader.api.*
 import java.time.Instant
@@ -9,15 +9,12 @@ import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.collections.ArrayList
 
-@Conf
-internal var config = Config()
-
-private val commands = ArrayList<TimeCommand>()
-
 @Load
-internal fun load(plugin: Plugin){
+internal fun Plugin.load(){
+    val config = conf(::Config)
     val zoneid = TimeZone.getTimeZone(config.timezone).toZoneId()
     var currentDay = -1
+    val commands = ArrayList<TimeCommand>()
     config.timers.forEach{
         it.per.forEach{str ->
             val splt = str.split(":")
@@ -33,7 +30,7 @@ internal fun load(plugin: Plugin){
             }
         }
     }
-    plugin.runTaskTimer(10, {
+    runTaskTimer(10){
         val time = Instant.now().atZone(zoneid)
         if(time.dayOfYear != currentDay){
             commands.forEach{it.called.set(false)}
@@ -42,23 +39,23 @@ internal fun load(plugin: Plugin){
         commands.forEach{
             if(it.called.get())return@forEach
             if(it.hour != time.hour || it.minute != time.minute)return@forEach
-            it.commands.exec(plugin)
+            it.commands.exec(this)
             it.called.set(true)
         }
-    })
+    }
 }
 
 private class TimeCommand(val hour: Int, val minute: Int, val commands: Commands, var called: AtomicBoolean = AtomicBoolean(false))
 
 @Serializable
-internal class Config(
-    val timezone: String = TimeZone.getDefault().id,
-    val timers: List<Timer> = listOf(Timer())
-)
+internal class Config {
+    val timezone = TimeZone.getDefault().id
+    val timers = listOf(Timer())
+}
 
 @Serializable
-internal class Timer(
-    val commands: Commands = Commands(listOf("!cmd")),
-    val perMinuteInHour: IntArray = intArrayOf(3),
-    val per: List<String> = listOf("3:00")
-)
+internal class Timer {
+    val commands = Commands("!cmd")
+    val perMinuteInHour = intArrayOf(3)
+    val per = listOf("3:00")
+}

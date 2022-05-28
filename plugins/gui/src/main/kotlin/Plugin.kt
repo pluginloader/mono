@@ -24,6 +24,10 @@ data class ConfigInventory(
                 auto: Map<Char, Item> = mapOf('0' to Item.default())) : this(title, context, auto, HashMap())
 
     fun active(): ActiveInventory{
+        return active(title)
+    }
+
+    fun active(title: String): ActiveInventory{
         val size = context[0].length * context.size
         val inventory = Bukkit.createInventory(null, size, title)
         val active = ActiveInventory(inventory, context, size)
@@ -39,6 +43,8 @@ data class ConfigInventory(
 class ActiveInventory(private val inventory: Inventory, context: List<String>, size: Int){
     private val chars = CharArray(size)
     private val actions = Array<((InventoryClickEvent) -> Unit)?>(size){null}
+    private val filled = BooleanArray(size)
+    private var outsideClick: (InventoryClickEvent) -> Unit = {}
 
     init{
         var i = 0
@@ -47,6 +53,7 @@ class ActiveInventory(private val inventory: Inventory, context: List<String>, s
 
     internal fun event(event: InventoryClickEvent){
         if(event.rawSlot < 0 || event.rawSlot >= chars.size){
+            outsideClick(event)
             return
         }
         actions[event.rawSlot]?.invoke(event)
@@ -60,42 +67,34 @@ class ActiveInventory(private val inventory: Inventory, context: List<String>, s
     fun fill(char: Char, stack: ItemStack, action: ((InventoryClickEvent) -> Unit)? = null) = set(char, stack, action)
     fun add(char: Char, stack: ItemStack, action: ((InventoryClickEvent) -> Unit)? = null) = set(char, stack, action){return}
 
+    fun outside(action: ((InventoryClickEvent) -> Unit)){
+        outsideClick = action
+    }
+
     private inline fun set(char: Char, stack: ItemStack, noinline action: ((InventoryClickEvent) -> Unit)?, find: () -> Unit = {}){
         chars.forEachIndexed{index, c ->
             if(c != char)return@forEachIndexed
-            val current = inventory.contents[index]
-            if(current != null && current.type != Material.AIR)return@forEachIndexed
+            if(filled[index])return@forEachIndexed
+            filled[index] = true
             action.nonNull{actions[index] = it}
-            val contents = inventory.contents
-            contents[index] = stack
-            inventory.contents = contents
+            inventory.setItem(index, stack)
             find()
         }
     }
 }
 
 private val opened = HashMap<Inventory, ActiveInventory>()
+
+@Plu
 private lateinit var plu: LoaderPlugin
 
 @Load
-internal fun load(plugin: LoaderPlugin){
-    plu = plugin
-}
-
-@Listener
-internal fun event(event: InventoryCloseEvent) = runTaskLater(1) {
-    if (event.viewers.isEmpty()) opened.remove(event.inventory)
-}
-
-@Listener
-internal fun event(event: InventoryClickEvent){
-    opened[event.inventory].nonNull{
-        event.cancel()
-        it.event(event)
+internal fun Plugin.load(){
+    listener<InventoryCloseEvent>{runTaskLater(1){if(viewers.isEmpty()) opened.remove(inventory)}}
+    listener<InventoryClickEvent>{
+        val opened = opened[inventory] ?: return@listener
+        cancel()
+        opened.event(this)
     }
-}
-
-@Listener
-internal fun event(event: InventoryDragEvent){
-    if(opened.containsKey(event.inventory))event.cancel()
+    listener<InventoryDragEvent>{if(opened.containsKey(inventory))cancel()}
 }

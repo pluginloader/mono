@@ -1,62 +1,64 @@
 # mono
-Репозиторий для большинства плагинов, устанавливаются через /plu i [Название] <br />
-Конфиги для плагинов находятся в папке conf <br />
+Repository for most plugins, installing via /plu i [Name] <br />
+The configurations for the plugins are in the folder conf <br />
 
-# Обычные плагины
-autorespawn - Автоматический респавн после смерти <br />
-boosters - Выводит активные бустеры <br />
-chancecmd - Выполняет команды с некоторым шансом /chancecmd <br />
-chat - Заменяет ванильный чат <br />
-clearchat - Заменяет мат, и немного мешает флудить <br />
-closegui - Закрывает инвентарь игроку /closegui <br />
-commandcooldown - Задержки для команд <br />
-commandsbytime - Выполнение команд раз в некоторое время <br />
-disableanycraft - Запрещает крафтить <br />
-disablechunkunload - Отключает разгрузку чанков <br />
-disablecorus - Запрещает использовать корус <br />
-disablefeed - Отключает голод <br />
-disablejoin - Запрещает вход при недостатке статистики <br />
-disableitemdrop - Запрещает выбрасывать вещи <br />
-disablemobexp - Отключает опыт с мобов <br />
-disablepearl - Запрещает использовать эндер жемчуг <br />
-disableshalkerinec - Запрещает ложить шалкеры в эндер сундук <br />
-guicommand - Кастомные меню <br />
-hideall - Скрывает всех игроков <br />
-itemcommand - Выполнение команд при клике предметом <br />
-iteminfo - Выводит информацию о предмете /iteminfo <br />
-lowtps - Выполняет команды при низком тпс <br />
-mobpickupitems - Запрещает подбирать мобам предметы <br />
-morestatschat - Добавляет в чат статистику <br />
-morestatscmd - /mystats, показывает статистику игрока <br />
-moretext - Команды для префиксов к сообщениям, /et [Игрок] [Сообщение] <br />
-randombylist - Выполняет случайную команду из списка, /randombylist <br />
-randommoney - Выдает случайный процент от текущего количества денег <br />
-removeitem - Убирает указанное количество предметов из руки <br />
-removequitmsg - Убирает сообщение о выходе <br />
-scrmsg - Команда для отправки тайтлов и экшен баров <br />
-setcustomname - Установка кастомного имени игроку <br />
-setnbt - Добавление NBT предмету в руке /setnbt <br />
-sound - Проигрывание звука игроку <br />
-statsdeath - Добавляет в статистику смерти <br />
-statskill - Добавляет в статистику убийства <br />
-texttower - Межсерверный чат <br />
-trash - /мусорка, удаление лишних предметов <br />
-triggermsg - Выполнение команд при словах в чате <br />
-withoutsnow - Отключает появление блоков снега при снегопаде <br />
-worldgen - Генерирует мир <br />
+# Simple plugins
+autorespawn - Automatic respawn after death <br />
+boosters - Discharges active boosters <br />
+chancecmd - Executes commands with some chance, /chancecmd <br />
+chat - Replaces vanilla chat <br />
+clearchat - Replaces words, and makes it a bit of a hindrance to flubbing <br />
+closegui - Closes the player's inventory /closegui <br />
+commandcooldown - Delays for commands <br />
+commandsbytime - Executing commands once in a while  <br />
+disableanycraft - Disable crafting <br />
+disablechunkunload - Disables chunk unloading <br />
+disablecorus - Prohibits the use of a corus <br />
+disablefeed - Disable feed <br />
+disablejoin - Prohibits entry if there are insufficient statistics <br />
+disableitemdrop - Prohibits throwing things away <br />
+disablemobexp - Disables experience from mobs <br />
+disablepearl - Prohibits use of ender pearls <br />
+disableshalkerinec - Prohibits putting shulkers in the ender chest <br />
+guicommand - Custom GUI's <br />
+hideall - Hide all players <br />
+itemcommand - Executing commands when the item is clicked <br />
+iteminfo - Outputs information about the item in hand, /iteminfo <br />
+lowtps - Executes commands when tps is low <br />
+mobpickupitems - Prohibits mobs from picking up objects <br />
+morestatschat - Adds statistics to the chat <br />
+morestatscmd - /mystats, shows a player's statistics <br />
+moretext - Commands for prefixes to messages, /et [Player] [Message] <br />
+randombylist - Executes a random command from a list, /randombylist <br />
+randommoney - Give a random percentage of the current amount of money <br />
+removeitem - Removes the specified number of items from the hand <br />
+removequitmsg - Disable quit message <br />
+scrmsg - Command to send out titles and action bars <br />
+setcustomname - Set custom name for a player <br />
+setnbt - Add NBT to item in hand, /setnbt <br />
+sound - Playing sound to the player <br />
+statsdeath - Adds to the statistics deaths <br />
+statskill - Adds to the statistics murders <br />
+texttower - Interserver chat <br />
+trash - /trash, clutter removal <br />
+triggermsg - Executing commands when keywords are spoken in chat <br />
+withoutsnow - Disables the appearance of snow blocks when snow falls <br />
+worldgen - Generate world <br />
 <br />
-# Библеотеки
-configs - Конфиги для плагинов, используется буквально везде<br />
-cuboid - Кубоид с двумя точками Cuboid<br />
-donate - Интерфейсы для доната, требуют реализации<br />
-gui - Создание гуи ConfigInventory <br />
-money - Управление балансом Money <br />
-booster - Бустеры, /booster <br />
-playerinfo - Получение читаемого имени игрока, суффиксы, префиксы, ник. PlayerReadable <br />
-provide - Смотри исходники text <br />
-text - Всякое связанное с отправкой текста <br />
+# Libs
+configs - Configurations for plugins, used literally everywhere<br />
+cuboid - Cuboid with two points<br />
+donate - Interfaces for donation, require implementation<br />
+gui - Create in-game GUI, ConfigInventory <br />
+money - Balance management, Money <br />
+booster - Boosters, /booster <br />
+playerinfo - Getting a readable player name, suffixes, prefixes, nickname. PlayerReadable <br />
+provide - See plugin text <br />
+pstore - Stores temp information in player <br />
+text - Anything to do with sending a text <br />
 cmdexec - ```Commands(listOf("text %player% lol")).exec(plugin, player)``` <br />
 readablelong - ```100000000L.readable()``` -> 100,000,000 <br />
-morestats - Статистика по каждому игроку /morestats, @StatsAPI <br />
-spi - Хранение данных о игроке, смотри morestats <br />
-tower - Используется для связывания нескольких серверов <br />
+morestats - Statistics for each player /morestats, @StatsAPI <br />
+spi - Store information about player, see morestats <br />
+sspi - Simpler version of spi <br />
+tower - Used to link several servers <br />

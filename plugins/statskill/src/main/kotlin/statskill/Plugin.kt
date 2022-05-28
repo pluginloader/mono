@@ -2,6 +2,7 @@ package statskill
 
 import cmdexec.Commands
 import configs.Conf
+import configs.conf
 import kotlinx.serialization.Serializable
 import morestats.Stats
 import morestats.StatsAPI
@@ -9,29 +10,24 @@ import org.bukkit.entity.EntityType
 import org.bukkit.event.entity.EntityDeathEvent
 import pluginloader.api.*
 
-@Conf
-internal var config = Config()
-private lateinit var plu: LoaderPlugin
-
-@Load
-internal fun load(plugin: LoaderPlugin){
-    plu = plugin
-}
-
 @StatsAPI
 internal lateinit var stats: Stats
 
-@Listener
-internal fun death(event: EntityDeathEvent){
-    val killer = event.entity.killer ?: return
-    if(killer.uniqueId == event.entity.uniqueId)return
-    if(event.entityType == EntityType.PLAYER)config.playerKillCommands.exec(plu, killer)
-    stats.add(killer.uuid, if(event.entity.type == EntityType.PLAYER) config.playerKillStat else config.mobKillStat, 1.0)
+@Load
+internal fun Plugin.load(){
+    val plu = this
+    val config = conf(::Config)
+    listener<EntityDeathEvent>{
+        val killer = entity.killer ?: return@listener
+        if(killer.uniqueId == entity.uniqueId)return@listener
+        if(entityType == EntityType.PLAYER) config.playerKillCommands.exec(plu, killer)
+        stats.add(killer.uuid, if(entityType == EntityType.PLAYER) config.playerKillStat else config.mobKillStat, 1.0)
+    }
 }
 
 @Serializable
-internal class Config(
-    val playerKillCommands: Commands = Commands(listOf("!onkill %player%")),
-    val playerKillStat: String = "player_kills",
-    val mobKillStat: String = "mob_kills"
-)
+internal class Config{
+    val playerKillCommands = Commands("!onkill %player%")
+    val playerKillStat = "player_kills"
+    val mobKillStat = "mob_kills"
+}

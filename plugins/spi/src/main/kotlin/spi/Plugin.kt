@@ -18,7 +18,7 @@ import kotlin.collections.HashMap
 @Conf
 internal var config = Config()
 
-private lateinit var spi: (String, KSerializer<Any>) -> SPI<Any>
+private lateinit var spi: (LoaderPlugin, String, KSerializer<Any>) -> SPI<Any>
 
 interface SPI<T>{
     fun remove(uuid: UUID)
@@ -31,7 +31,13 @@ interface SPI<T>{
 
     companion object{
         @Suppress("UNCHECKED_CAST")
-        fun <T> get(plugin: LoaderPlugin, table: String, kSerializer: KSerializer<T>): SPI<T> = spi(table, kSerializer as KSerializer<Any>) as SPI<T>
+        fun <T> get(plugin: LoaderPlugin, table: String, kSerializer: KSerializer<T>): SPI<T> = spi(plugin, table, kSerializer as KSerializer<Any>) as SPI<T>
+
+        fun custom(plugin: LoaderPlugin, custom: (LoaderPlugin, String, KSerializer<Any>) -> SPI<Any>){
+            val previous = spi
+            spi = custom
+            plugin.unloadHandler{spi = previous}
+        }
     }
 }
 
@@ -46,13 +52,13 @@ internal fun load(plugin: LoaderPlugin){
     if(config.standalone){
         val database = Database(File(config.databaseDir), Options())
         plugin.unloadHandler { database.close() }
-        spi = {table, serializer -> SpiImpl(database, table, serializer)}
+        spi = {_, table, serializer -> SpiImpl(database, table, serializer)}
         return
     }
     if(config.server){
         val database = Database(File(config.databaseDir), Options())
         plugin.unloadHandler{database.close()}
-        spi = {table, serializer -> SpiImpl(database, table, serializer)}
+        spi = {_, table, serializer -> SpiImpl(database, table, serializer)}
         val server = TowerServer(plugin)!!
         val locks = HashMap<UUID, String>()
         val unlocks = HashMap<UUID, MutableList<() -> Unit>>()
@@ -183,7 +189,7 @@ internal fun load(plugin: LoaderPlugin){
                 }, checkOp = true)
             }
         }//not bukkit
-        spi = {table, serializer ->
+        spi = {_, table, serializer ->
             object: SPI<Any>{
                 override fun remove(uuid: UUID) {
                     client.send(Drop(table, uuid))

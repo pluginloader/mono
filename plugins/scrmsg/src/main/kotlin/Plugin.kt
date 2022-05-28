@@ -2,11 +2,7 @@ package scrmsg
 
 import com.destroystokyo.paper.Title
 import org.bukkit.Bukkit
-import pluginloader.api.Args
-import pluginloader.api.Command
-import pluginloader.api.Sender
-
-private const val prefix = "§8[§aPlu§8]§f"
+import pluginloader.api.*
 
 @Command("scrmsg", op = true)
 internal fun cmd(sender: Sender, args: Args){
@@ -15,7 +11,7 @@ internal fun cmd(sender: Sender, args: Args){
         sender.sendMessage("$prefix Or: §6/scrmsg <Player|*> normal title | subtitle")
         return
     }
-    val player = if(args[0] == "*") Bukkit.getOnlinePlayers() else listOf(Bukkit.getPlayer(args[0]))
+    val player = if(args[0] == "*") Bukkit.getOnlinePlayers() else listOf(args.player(sender, 0) ?: return)
     if(args[1] == "action"){
         player.forEach{it.sendActionBar(args.copyOfRange(2, args.size).joinToString(" "))}
     }else if(args[1] == "normal"){

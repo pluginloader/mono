@@ -1,33 +1,23 @@
 package chancecmd
 
 import cmdexec.Commands
-import configs.Conf
+import configs.conf
 import kotlinx.serialization.Serializable
-import org.bukkit.Bukkit
 import pluginloader.api.*
 import kotlin.random.Random
 
-@Conf
-internal var config = Config()
-private lateinit var plu: LoaderPlugin
-
 @Load
-internal fun load(plugin: LoaderPlugin){
-    plu = plugin
-}
-
-@Command("chancecmd", op = true)
-internal fun chancecmd(sender: Sender, args: Args){
-    if(args.isEmpty()){
-        sender.sendMessage("§8[§aPlu§8]§f Usage: /chancecmd [player] [type] [chance 0.0-100.0]")
-        return
+internal fun Plugin.load(){
+    val config = conf(::Config)
+    command(true, name = "chancecmd"){sender, args ->
+        args.use(sender, 3, "chancecmd [player] [type] [chance 0.0-100.0]") ?: return@command
+        val player = args.player(sender, 0) ?: return@command
+        val cmd = args.cantFind(sender, config.mapping[args[1]], "mapping", args[1]) ?: return@command
+        val chance = args.double(sender, 2) ?: return@command
+        if(chance <= Random.nextDouble(0.0, 100.0))return@command
+        cmd.exec(this, player)
     }
-    val player = Bukkit.getPlayer(args[0]) ?: return
-    val cmd = config.mapping[args[1]] ?: return
-    val chance = args[2].toDouble()
-    if(chance <= Random.nextDouble(0.0, 100.0))return
-    cmd.exec(plu, player)
 }
 
 @Serializable
-internal class Config(val mapping: Map<String, Commands> = mapOf("type" to Commands(listOf("text %player% random!"))))
+internal class Config{val mapping = mapOf("type" to Commands("text %player% random!"))}

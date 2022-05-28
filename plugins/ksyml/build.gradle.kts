@@ -1,14 +1,15 @@
 plugins{
-    id("io.github.pluginloader.gradle") version("1.11.10")
+    id("io.github.pluginloader.gradle") version("1.14.0")
 }
 
 group = "io.github.pluginloader"
-version = "1.0.1"
+version = "1.1.0"
 
 plu.public()
 
 dependencies{
-    implementation("com.charleskorn.kaml:kaml:0.37.0"){
+    implementation("org.snakeyaml:snakeyaml-engine:2.3")
+    implementation("com.charleskorn.kaml:kaml:0.42.0"){
         exclude("org.jetbrains.kotlin")
         exclude("org.jetbrains.kotlinx")
     }

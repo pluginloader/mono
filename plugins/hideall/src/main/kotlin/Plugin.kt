@@ -4,11 +4,6 @@ import org.bukkit.entity.Player
 import org.bukkit.event.player.PlayerJoinEvent
 import pluginloader.api.*
 
-@Listener
-internal fun join(event: PlayerJoinEvent){
-    hide(event.player)
-}
-
 private fun hide(player: Player){
     onlinePlayers.forEach{
         it.hidePlayer(plugin, player)
@@ -17,8 +12,9 @@ private fun hide(player: Player){
 }
 
 @Load
-internal fun load(){
+internal fun Plugin.load(){
     onlinePlayers.forEach{hide(it)}
+    listener<PlayerJoinEvent>{hide(player)}
 }
 
 @Unload

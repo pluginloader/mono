@@ -93,6 +93,10 @@ class Commands(internal val commands: List<String>){
     }
 }
 
+fun Commands(vararg command: String): Commands{
+    return Commands(command.toList())
+}
+
 interface StrCache{
     operator fun get(index: Int): String
 }
@@ -160,7 +164,6 @@ interface CmdExec{
 
 private var debug: String? = null
 private var debugPlayer: Player? = null
-private const val prefix = "§8[§aPlu§8]§f"
 
 @Command("cmdexec", op = true)
 internal fun cmd(player: Player, args: Args){
@@ -175,7 +178,7 @@ internal fun cmd(player: Player, args: Args){
     if(debug == ""){
         player.sendMessage("$prefix Enabled full debug, use §6/cmdexec§f to disable")
     }else{
-        player.sendMessage("$prefix Enabled debug for plugins with name contains §6'$debug'")
+        player.sendMessage("$prefix Enabled debug for plugins with name contains §6$debug")
     }
 }
 

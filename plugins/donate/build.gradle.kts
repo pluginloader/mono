@@ -1,5 +1,5 @@
 plugins{
-    id("io.github.pluginloader.gradle") version("1.11.10")
+    id("io.github.pluginloader.gradle") version("1.14.0")
 }
 
 group = "io.github.pluginloader"

@@ -1,21 +1,18 @@
 package disablejoin
 
-import configs.Conf
+import configs.conf
 import kotlinx.serialization.Serializable
 import morestats.Stats
 import morestats.StatsAPI
 import org.bukkit.Bukkit
-import org.bukkit.event.player.PlayerJoinEvent
 import pluginloader.api.*
 
 @StatsAPI
 internal lateinit var stats: Stats
 
-@Conf
-internal var config = Config()
-
 @Load
-internal fun load(plugin: Plugin){
+internal fun Plugin.load(){
+    val config = conf(::Config)
     stats.onLoad {uuid ->
         val player = Bukkit.getPlayer(uuid) ?: return@onLoad
         val need = config.mapping[player.world.name] ?: return@onLoad
@@ -25,8 +22,8 @@ internal fun load(plugin: Plugin){
 }
 
 @Serializable
-internal class Config(
-    val stat: String = "level", 
-    val mapping: Map<String, Int> = mapOf("wooorld" to 1), 
-    val message: String = "§8[§ci§8]§f У вас недостаточный уровень"
-)
+internal class Config {
+    val stat = "level"
+    val mapping = mapOf("wooorld" to 1)
+    val message = "§8[§ci§8]§f You have an insufficient level"
+}

@@ -1,16 +1,10 @@
 package disablefeed
 
 import org.bukkit.event.entity.FoodLevelChangeEvent
-import pluginloader.api.Listener
-import pluginloader.api.Load
-import pluginloader.api.onlinePlayers
+import pluginloader.api.*
 
 @Load
-internal fun onLoad(){
+internal fun Plugin.onLoad(){
     onlinePlayers.forEach{it.foodLevel = 20}
-}
-
-@Listener
-internal fun onFeed(event: FoodLevelChangeEvent){
-    event.foodLevel = 20
+    listener<FoodLevelChangeEvent>{foodLevel = 20}
 }

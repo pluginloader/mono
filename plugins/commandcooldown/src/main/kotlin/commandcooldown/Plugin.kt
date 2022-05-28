@@ -1,6 +1,6 @@
 package commandcooldown
 
-import configs.Conf
+import configs.conf
 import kotlinx.serialization.Serializable
 import org.bukkit.event.EventPriority
 import org.bukkit.event.player.PlayerCommandPreprocessEvent
@@ -8,94 +8,85 @@ import pluginloader.api.*
 import java.util.*
 import kotlin.collections.HashMap
 
-@Conf
-internal val config = Config()
-
 private val command = HashMap<String, Cooldown>()
 private val cd = HashMap<UUID, HashMap<Cooldown, Long>>()
 
 @Load
-internal fun load(){
+internal fun Plugin.load(){
+    val config = conf(::Config)
     config.commands.forEach{
         val cooldown = Cooldown(it.time * 1000L)
         it.commands.forEach{cmd -> command[cmd] = cooldown}
     }
-}
-
-@Listener(EventPriority.HIGHEST)
-internal fun cmd(event: PlayerCommandPreprocessEvent){
-    if(event.isCancelled)return
-    try {
-        if (!event.message.startsWith("/")) return
-        val bug = event.message.indexOf(':')
+    listener<PlayerCommandPreprocessEvent>(priority = EventPriority.HIGHEST){
+        if(isCancelled)return@listener
+        if (!message.startsWith("/")) return@listener
+        val bug = message.indexOf(':')
         val start = if (bug == -1) 1 else bug + 1
-        val end = event.message.indexOf(' ')
-        val cmd = event.message.substring(start, if (end == -1) event.message.length else end).lowercase()
-        val found = command[cmd] ?: return
-        val map = cd[event.player.uuid] ?: HashMap()
+        val end = message.indexOf(' ')
+        val cmd = message.substring(start, if (end == -1) message.length else end).lowercase()
+        val found = command[cmd] ?: return@listener
+        val map = cd[uuid] ?: HashMap()
         val cooldownEnd = map.getOrDefault(found, 0)
         val current = System.currentTimeMillis()
         if (current > cooldownEnd) {
             map[found] = current + found.time
-            cd[event.player.uuid] = map
+            cd[uuid] = map
         } else {
             val time = cooldownEnd - current
-            event.player.sendMessage(config.message.replace("%time%", formatTime(time)))
-            event.cancel()
+            player.sendMessage(config.message.replace("%time%", formatTime(time)))
+            cancel()
         }
-    }catch (ex: Throwable){
-        ex.printStackTrace()
-        // :/
     }
 }
 
-private fun formatTime(time: Long): String {
-    var time = time
+private fun formatTime(inputTime: Long): String {
+    var time = inputTime
     val sb = StringBuilder()
     var formattedOnce = false
     if (time > 86400000) {
         val days = time / 86400000
-        sb.append(days).append(plurals(" день ", " дня ", " дней ", days.toInt()))
+        sb.append(days).append(plurals(" day ", " days ", days.toInt()))
         time %= 86400000
         formattedOnce = true
     }
     if (time > 3600000) {
         val hours = time / 3600000
-        sb.append(hours).append(plurals(" час ", " часа ", " часов ", hours.toInt()))
+        sb.append(hours).append(plurals(" hour ", " hours ", hours.toInt()))
         time %= 3600000
         if (formattedOnce) return sb.toString()
         formattedOnce = true
     }
     if (time > 60000) {
         val minutes = time / 60000
-        sb.append(minutes).append(plurals(" минуту ", " минуты ", " минут ", minutes.toInt()))
+        sb.append(minutes).append(plurals(" minute ", " minutes ", minutes.toInt()))
         time %= 60000
         if (formattedOnce) return sb.toString()
         formattedOnce = true
     }
     if (time > 1000) {
         val seconds = time / 1000
-        sb.append(seconds).append(plurals(" секунду ", " секунды ", " секунд ", seconds.toInt()))
+        sb.append(seconds).append(plurals(" second ", " seconds ", seconds.toInt()))
         time %= 1000
         if (formattedOnce) return sb.toString()
     }
     return sb.append(time).append(" мс.").toString()
 }
 
-private fun plurals(one: String, couple: String, many: String, n: Int): String {
-    return if (n % 10 == 1 && n % 100 != 11) one else if (n % 10 in 2..4 && (n % 100 < 10 || n % 100 >= 20)) couple else many
+private fun plurals(one: String, many: String, n: Int): String {
+    return if(n == 1) one else many
 }
 
 private data class Cooldown(val time: Long)
 
 @Serializable
-internal class Config(
-    val message: String = "${Color.ORANGE}Вы можете ввести эту команду через %time%",
-    val commands: List<Command> = listOf(Command())
-)
+internal class Config {
+    val message = "§6You can enter this command after %time%"
+    val commands = listOf(Command())
+}
 
 @Serializable
-internal class Command(
-    val commands: List<String> = listOf("command"),
-    val time: Int = 10,
-)
+internal class Command {
+    val commands = listOf("command")
+    val time = 10
+}

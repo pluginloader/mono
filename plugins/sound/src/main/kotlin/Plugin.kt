@@ -1,13 +1,12 @@
 package sound
 
-import org.bukkit.Bukkit
-import pluginloader.api.Args
-import pluginloader.api.Command
-import pluginloader.api.Sender
+import pluginloader.api.*
 
 @Command("sound", op = true)
 internal fun sound(sender: Sender, args: Args){
-    if(args.size < 4)return
-    val player = Bukkit.getPlayer(args[0])
-    player.playSound(player.location, args[1], args[2].toFloat(), args[3].toFloat())
+    args.use(sender, 4, "sound [player] [sound] [volume] [pitch]")
+    val player = args.player(sender, 0) ?: return
+    val volume = args.float(sender, 2) ?: return
+    val pitch = args.float(sender, 3) ?: return
+    player.playSound(player.location, args[1], volume, pitch)
 }

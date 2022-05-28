@@ -1,6 +1,6 @@
 package playerinfo
 
-import configs.Conf
+import configs.conf
 import kotlinx.serialization.Serializable
 import org.bukkit.Bukkit
 import pluginloader.api.Load
@@ -62,22 +62,20 @@ private lateinit var prefix: Provider<PlayerPrefix>
 private lateinit var suffix: Provider<PlayerSuffix>
 private lateinit var uuidByNick: Provider<PlayerUUIDByNick>
 
-@Conf
-internal var config = Config()
-
 @Load
-internal fun load(plugin: Plugin){
-    full = plugin.registerProvider(PlayerReadable::class, PlayerReadable { uuid ->
+internal fun Plugin.load(){
+    val config = conf(::Config)
+    full = registerProvider(PlayerReadable::class, PlayerReadable { uuid ->
         val color = PlayerColor(uuid)
         val prefix = PlayerPrefix(uuid)
         val suffix = PlayerSuffix(uuid)
-        "${if (prefix.isEmpty()) "" else "$prefix "}${if(color.isEmpty()) config.defaultColor else color}${PlayerNick(uuid)}${if (suffix.isEmpty()) "" else " $suffix"}"
+        "${if (prefix.isEmpty()) "" else "$prefix "}${color.ifEmpty{config.defaultColor}}${PlayerNick(uuid)}${if (suffix.isEmpty()) "" else " $suffix"}"
     })
-    nick = plugin.registerProvider(PlayerNick::class, PlayerNick{Bukkit.getPlayer(it)?.name})
-    color = plugin.registerProvider(PlayerColor::class, PlayerColor{config.defaultColor})
-    prefix = plugin.registerProvider( PlayerPrefix::class, PlayerPrefix{""})
-    suffix = plugin.registerProvider(PlayerSuffix::class, PlayerSuffix{""})
-    uuidByNick = plugin.registerProvider(PlayerUUIDByNick::class, object: PlayerUUIDByNick{
+    nick = registerProvider(PlayerNick::class, PlayerNick{Bukkit.getPlayer(it)?.name})
+    color = registerProvider(PlayerColor::class, PlayerColor{config.defaultColor})
+    prefix = registerProvider( PlayerPrefix::class, PlayerPrefix{""})
+    suffix = registerProvider(PlayerSuffix::class, PlayerSuffix{""})
+    uuidByNick = registerProvider(PlayerUUIDByNick::class, object: PlayerUUIDByNick{
         override fun invoke(nick: String): UUID? {
             Bukkit.getOfflinePlayers().forEach{if(it.name == nick)return it.uniqueId}
             return null
@@ -86,5 +84,5 @@ internal fun load(plugin: Plugin){
 }
 
 @Serializable
-internal class Config(val defaultColor: String = "§7")
+internal class Config{val defaultColor = "§7"}
 

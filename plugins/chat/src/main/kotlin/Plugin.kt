@@ -52,12 +52,12 @@ internal fun event(event: AsyncPlayerChatEvent){
 }
 
 @Serializable
-internal class Config(
-	val msg: String = "§8[%world%§8] %player% %color%»§f %msg%", 
-	val defaultWorld: String = "§6Другое", 
-	val worlds: Map<String, String> = mapOf("world" to "§aМир"), 
-	val localchatEnabled: Boolean = true, 
-	val localchatDistance: Int = 50, 
-	val localchatWorld: String = "§bL", 
-	val enabled: Boolean = true,
-)
+internal class Config {
+    val msg = "§8[%world%§8] %player% %color%»§f %msg%"
+    val defaultWorld = "§6Another"
+    val worlds = mapOf("world" to "§aWorld")
+    val localchatEnabled = true
+    val localchatDistance = 50
+    val localchatWorld = "§bL"
+    val enabled = true
+}

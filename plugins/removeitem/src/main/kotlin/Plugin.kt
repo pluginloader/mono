@@ -1,19 +1,9 @@
 package removeitem
 
-import org.bukkit.Bukkit
-import org.bukkit.Color
-import pluginloader.api.Args
-import pluginloader.api.Command
-import pluginloader.api.Sender
-import pluginloader.api.nonNull
-
-private const val prefix = "§8[§aPlu§8]§f"
+import pluginloader.api.*
 
 @Command("removeitem", op = true)
 internal fun cmd(sender: Sender, args: Args){
-    if(args.size < 2){
-        sender.sendMessage("$prefix Usage: §6/removeitem [player] [amount]")
-        return
-    }
-    Bukkit.getPlayer(args[0]).nonNull{it.inventory.itemInMainHand.amount -= args[1].toInt()}
+    args.use(sender, 2, "removeitem [player] [amount]") ?: return
+    (args.player(sender, 0) ?: return).inventory.itemInMainHand.amount -= args.int(sender, 1) ?: return
 }

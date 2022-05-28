@@ -1,7 +1,7 @@
 package morestatschat
 
 import chat.chatReplace
-import configs.Conf
+import configs.conf
 import kotlinx.serialization.Serializable
 import morestats.Stats
 import morestats.StatsAPI
@@ -12,12 +12,10 @@ import pluginloader.api.uuid
 @StatsAPI
 internal lateinit var stats: Stats
 
-@Conf
-internal var config = Config()
-
 @Load
-internal fun load(plugin: Plugin){
-    plugin.chatReplace{player, message ->
+internal fun Plugin.load(){
+    val config = conf(::Config)
+    chatReplace{player, message ->
         var msg = message
         config.mapping.forEach{msg = msg.replace(it.key, stats.get(player.uuid, it.value).toInt().toString())}
         msg
@@ -25,4 +23,4 @@ internal fun load(plugin: Plugin){
 }
 
 @Serializable
-internal class Config(val mapping: Map<String, String> = mapOf("%lvl%" to "level"))
+internal class Config{val mapping = mapOf("%lvl%" to "level")}

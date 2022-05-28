@@ -1,7 +1,6 @@
 package mobpickupitems
 
 import org.bukkit.entity.EntityType
-import org.bukkit.entity.Player
 import org.bukkit.event.entity.EntityPickupItemEvent
 import pluginloader.api.Listener
 import pluginloader.api.cancel

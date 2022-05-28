@@ -1,14 +1,15 @@
 package booster
 
-import configs.Conf
+import configs.conf
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import metadata.MetadataStorage
 import metadata.metadata
 import org.bukkit.Bukkit
-import org.bukkit.event.player.PlayerJoinEvent
-import org.bukkit.event.player.PlayerQuitEvent
 import pluginloader.api.*
+import pstore.PStore
+import pstore.getOr
+import pstore.pStore
 import spi.SPI
 import java.util.*
 import kotlin.collections.ArrayList
@@ -49,7 +50,7 @@ fun LoaderPlugin.onUpdate(player: (String, UUID) -> Unit, global: (String) -> Un
 }
 
 fun LoaderPlugin.boostInfo(uuid: UUID): List<BoostInfo>?{
-    val boosts = (playerBoosters[uuid] ?: return null)
+    val boosts = (pStore[uuid] ?: return null)
     val list = ArrayList<BoostInfo>()
     boosts.values.forEach(list::addAll)
     return list
@@ -70,9 +71,9 @@ fun LoaderPlugin.booster(uuid: UUID, type: String, input: Double): Double{
 private fun calculate(uuid: UUID, type: String, input: Double): Double{
     var bst = 1.0
     var multiplyBoosters: ArrayList<Boost>? = null
-    globalBoosters[type].nonNull{
+    fun useIterators(boosters: MutableList<Boost>, global: Boolean){
         var call = false
-        val iter = it.iterator()
+        val iter = boosters.iterator()
         while (iter.hasNext()){
             val next = iter.next()
             if(next.end()){
@@ -87,106 +88,55 @@ private fun calculate(uuid: UUID, type: String, input: Double): Double{
             }
             bst += next.boost
         }
-        if(call) globalListener.forEach{calling -> calling(type)}
+        if(call) {
+            if(global)globalListener.forEach{calling -> calling(type)}
+            else playerListener.forEach{calling -> calling(type, uuid)}
+        }
     }
-    playerBoosters[uuid].nonNull{it.nonNull{boosterMap -> boosterMap[type].nonNull{
-        var call = false
-        val iter = it.iterator()
-        while (iter.hasNext()){
-            val next = iter.next()
-            if(next.end()){
-                call = true
-                iter.remove()
-                continue
-            }
-            if(next.multiply){
-                if(multiplyBoosters == null)multiplyBoosters = ArrayList(2)
-                multiplyBoosters!!.add(next)
-                continue
-            }
-            bst += next.boost
-        }
-        if(call) playerListener.forEach{calling -> calling(type, uuid)}
-    }}}
+    globalBoosters[type].nonNull{useIterators(it, true)}
+    pStore[uuid].nonNull{useIterators(it[type] ?: return@nonNull, false)}
     listenBoosters.forEach{caching {bst = it(uuid, type, bst)}}
     multiplyBoosters.nonNull{bst *= 1.0 + it.sumOf{boost -> boost.boost}}
     return input * bst
 }
 
-@Conf
-internal var config = Config()
-
 private val globalBoosters = HashMap<String, MutableList<Boost>>()
-private val playerBoosters = HashMap<UUID, HashMap<String, MutableList<Boost>>>()
+private lateinit var pStore: PStore<HashMap<String, MutableList<Boost>>>
 private lateinit var storage: MetadataStorage<Boost>
 private lateinit var spi: SPI<List<Boost>>
 
-@Listener
-internal fun join(event: PlayerJoinEvent){
-    playerJoin(event.uuid)
-}
-
-@Listener
-internal fun quit(event: PlayerQuitEvent){
-    playerQuit(event.uuid)
-}
-
-private const val prefix = "§8[§aPlu§8]§f"
-
 @Command("booster", op = true)
 internal fun cmdBooster(sender: Sender, args: Args){
-    if(args.isEmpty()){
-        sender.sendMessage("$prefix Usage: §6/booster [player|global] {player} [add|clear|list|calculate]...")
-        return
-    }
+    val use = "booster [player|global] {player} [add|clear|list|calculate]..."
+    args.use(sender, 1, use) ?: return
     val context = when(args[0]){
         "player" -> {
-            if(args.size == 1){
-                sender.sendMessage("$prefix Usage: §6/booster player [player] [add|clear|list|update]...")
-                return
-            }
-            val player = Bukkit.getPlayer(args[1])
-            if(player == null){
-                sender.sendMessage("$prefix §cPlayer §6'${args[1]}'§c not found")
-                return
-            }
-            playerBoosters.computeIfAbsent(player.uuid){HashMap()}
+            args.use(sender, 2, "booster player [player] [add|clear|list|update]...") ?: return
+            pStore[args.player(sender, 1) ?: return] ?: return
         }
         "global" -> globalBoosters
         else -> {
-            sender.sendMessage("$prefix Usage: §6/booster [player|global] {player} [add|clear|list]...")
+            args.use(sender, 100, use)
             return
         }
     }
-    val isPlayer = args[0] == "player"
+    val isPlayer = context != globalBoosters
     val offset = if(isPlayer) 2 else 1
-    if(args.size == offset){
-        sender.sendMessage("$prefix Usage: §6/booster [player|global] {player} [add|clear|list]...")
-        return
-    }
+    if(args.size == offset) args.use(sender, 100, use) ?: return
     when(args[offset]){
         "add" -> {
-            if(args.size < offset + 4){
-                sender.sendMessage("$prefix Usage: §6/booster [player|global] {player} add [type] [time in minutes|*] [boost]")
-                return
-            }
+            args.use(sender, offset + 4, "booster [player|global] {player} add [type] [time in minutes|*] [boost]") ?: return
             val type = args[offset + 1]
-            val timeInMinutes = if(args[offset + 2] == "*") Long.MAX_VALUE else args[offset + 2].toLongOrNull()
-            if(timeInMinutes == null){
-                sender.sendMessage("$prefix §cTime in minutes §6'${args[offset + 2]}'§c not a number")
-                return
-            }
+            val timeInMinutes = if(args[offset + 2] == "*") Long.MAX_VALUE else (args.int(sender, offset + 2) ?: return).toLong()
             val boostStr = args[offset + 3]
             val multiply = boostStr[0] == '*'
-            val boost = (if(multiply) boostStr.substring(1) else boostStr).toDoubleOrNull()
-            if(boost == null){
-                sender.sendMessage("$prefix §cBoost §6'${args[offset + 3]}'§c not a number")
-                return
-            }
+            val boost = args.nonNull(sender, (if(multiply) boostStr.substring(1) else boostStr).toDoubleOrNull()){
+                "Boost §6${args[offset + 3]}§f not a number"
+            } ?: return
             val booster = Boost(type, if(timeInMinutes == Long.MAX_VALUE) timeInMinutes else System.currentTimeMillis() + (timeInMinutes * 60000), boost, multiply)
             if(isPlayer)context.computeIfAbsent(type){ArrayList()}.add(booster)
             else storage.push(booster)
-            sender.sendMessage("$prefix New booster with type §6'$type'§f, time: §6'${if(booster.infinity) "infinity" else "$timeInMinutes minutes"}'§f, boost §6'$boost'§f, multiply §6'$multiply'")
+            sender.sendMessage("$prefix New booster with type §6$type§f, time: §6${if(booster.infinity) "infinity" else "$timeInMinutes minutes"}§f, boost §6$boost§f, multiply §6$multiply")
             if(isPlayer){
                 val uuid = Bukkit.getPlayer(args[1]).uuid
                 playerListener.forEach{it(type, uuid)}
@@ -196,10 +146,10 @@ internal fun cmdBooster(sender: Sender, args: Args){
             context.forEach{
                 it.value.forEach booster@{booster ->
                     if(booster.end())return@booster
-                    sender.sendMessage("$prefix Delete booster with type §6'${booster.type}'§f time §6'${
+                    sender.sendMessage("$prefix Delete booster with type §6${booster.type}§f time §6${
                         if(booster.infinity) "infinity" 
                         else "${booster.timeToEndInMinutes()} minutes"
-                    }'§f, boost §6'${booster.boost}'§f, multiply §6'${booster.multiply}'")
+                    }§f, boost §6${booster.boost}§f, multiply §6${booster.multiply}")
                 }
             }
             if(isPlayer)context.clear()
@@ -217,24 +167,16 @@ internal fun cmdBooster(sender: Sender, args: Args){
             }
         }
         "calculate" -> {
-            if(args.size < offset + 2){
-                sender.sendMessage("$prefix Usage: §6/booster [player|global] {player} calculate [type] [input]")
-                return
-            }
-            val result = calculate((Bukkit.getPlayer(args[1]) ?: return).uuid, args[offset + 1], args[offset + 2].toDouble())
+            args.use(sender, offset + 2, "booster [player|global] {player} calculate [type] [input]") ?: return
+            val result = calculate((args.player(sender, 1) ?: return).uuid, args[offset + 1], args[offset + 2].toDouble())
             sender.sendMessage("$prefix Result: §6'$result'")
         }
         "update" -> {
-            if(args.size < 4){
-                sender.sendMessage("$prefix Usage: §6/booster player [player] update [type]")
-                return
-            }
-            val player = Bukkit.getPlayer(args[1]) ?: return
+            args.use(sender, 4, "booster player [player] update [type]") ?: return
+            val player = args.player(sender, 1) ?: return
             playerListener.forEach{it(args[3], player.uuid)}
         }
-        else -> {
-            sender.sendMessage("$prefix Usage: §6/booster [player|global] {player} [add|clear|list]...")
-        }
+        else -> args.use(sender, 100, use)
     }
 }
 
@@ -250,48 +192,26 @@ internal fun load(plugin: LoaderPlugin){
             globalListener.forEach{calling -> calling(booster.type)}
         }
     )
+    val config = plugin.conf(::Config)
     spi = SPI.get(plugin, config.tableName, ListSerializer(Boost.serializer()))
-    Bukkit.getOnlinePlayers().forEach{playerJoin(it.uuid)}
-}
-
-@Unload
-internal fun unload(){
-    Bukkit.getOnlinePlayers().forEach{playerQuit(it.uuid)}
-}
-
-@Command("dropboosters", op = true)
-internal fun cmd(sender: Sender, args: Args){
-    spi.iterate({uuid, boosters ->
-        val new = ArrayList<Boost>()
-        boosters.forEach{if(it.infinity)new.add(it)}
-        spi.save(uuid, new)
-    }){
-        sender.sendMessage("ok")
-    }
-}
-
-private fun playerJoin(uuid: UUID){
-    spi.load(uuid){ maybe ->
-        playerBoosters.remove(uuid)
-        maybe.nonNull { list ->
-            val map = playerBoosters.computeIfAbsent(uuid){HashMap()}
-            list.forEach{if(!it.end()){
-                map.computeIfAbsent(it.type){ArrayList()}.add(it)
-                playerListener.forEach{calling -> calling(it.type, uuid)}
-            }}
+    pStore = plugin.pStore(load = {player -> spi.load(player.uuid) spi@{input ->
+        if(player.isOnline.not())return@spi
+        val boosters = pStore.getOr(player, ::HashMap)
+        if(input == null)return@spi
+        input.forEach{
+            if(it.end())return@forEach
+            boosters.computeIfAbsent(it.type){ArrayList()}.add(it)
         }
-    }
-}
-
-private fun playerQuit(uuid: UUID){
-    val boosters = playerBoosters.remove(uuid) ?: return
-    val saveBoosters = ArrayList<Boost>()
-    boosters.forEach{saveBoosters.addAll(it.value)}
-    spi.save(uuid, saveBoosters)
+    }}, unload = {player, boosters ->
+        boosters ?: return@pStore
+        val saveBoosters = ArrayList<Boost>()
+        boosters.forEach{saveBoosters.addAll(it.value)}
+        spi.save(player.uuid, saveBoosters)
+    })
 }
 
 @Serializable
 private data class Boost(override val type: String, override val end: Long, override val boost: Double, val multiply: Boolean = false): BoostInfo
 
 @Serializable
-internal class Config(val tableName: String = "boosters")
+internal class Config{val tableName= "boosters"}

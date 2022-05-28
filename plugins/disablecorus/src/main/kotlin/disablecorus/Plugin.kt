@@ -7,7 +7,5 @@ import pluginloader.api.cancel
 
 @Listener
 internal fun eat(event: PlayerItemConsumeEvent){
-    if(event.item != null && event.item.type == Material.CHORUS_FRUIT){
-        event.cancel()
-    }
+    if(event.item?.type == Material.CHORUS_FRUIT) event.cancel()
 }

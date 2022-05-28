@@ -2,11 +2,8 @@ package iteminfo
 
 import org.bukkit.Material
 import org.bukkit.entity.Player
-import org.bukkit.event.inventory.InventoryOpenEvent
-import pluginloader.api.Color
 import pluginloader.api.Command
-
-private const val prefix = "§8[§aPlu§8]§f"
+import pluginloader.api.prefix
 
 @Command("iteminfo", op = true)
 internal fun cmd(player: Player){
@@ -15,5 +12,5 @@ internal fun cmd(player: Player){
         player.sendMessage("$prefix Empty")
         return
     }
-    player.sendMessage("$prefix Type: §6'${item.type}'§f, meta: §6'${item.durability}'")
+    player.sendMessage("$prefix Type: §6${item.type}§f, meta: §6${item.durability}")
 }

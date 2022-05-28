@@ -1,21 +1,31 @@
 package moretext
 
-import configs.Conf
+import configs.conf
 import kotlinx.serialization.Serializable
+import net.md_5.bungee.api.chat.TextComponent
 import org.bukkit.Bukkit
 import pluginloader.api.Load
 import pluginloader.api.Plugin
+import text.Text
+import text.TextAPI
 
-@Conf
-internal var config = Config()
+@TextAPI
+internal lateinit var text: Text
 
 @Load
-internal fun load(plugin: Plugin){
-    config.texts.forEach{entry -> plugin.registerCommand(entry.key, {sender, args ->
+internal fun Plugin.load(){
+    val config = conf(::Config)
+    config.texts.forEach{entry -> registerCommand(entry.key, {_, args ->
         val player = Bukkit.getPlayer(args[0]) ?: return@registerCommand
-        player.sendMessage(entry.value + args.drop(1).joinToString(" "))
+        text.buildMessage(args.drop(1).joinToString(" ")).whenComplete{list, _ ->
+            list.forEach{
+                val text = TextComponent(entry.value)
+                text.extra = listOf(it)
+                player.sendMessage(text)
+            }
+        }
     }, true)}
 }
 
 @Serializable
-internal class Config(val texts: Map<String, String> = mapOf("et" to "§8[§ci§8]§f ", "wt" to "§8[§ei§8]§f ", "st" to "§8[§ai§8]§f "))
+internal class Config{val texts = mapOf("et" to "§8[§ci§8]§f ", "wt" to "§8[§ei§8]§f ", "st" to "§8[§ai§8]§f ")}

@@ -9,10 +9,10 @@ import pluginloader.api.Command
 @Conf
 internal var config = Config()
 
-@Command("мусорка")
+@Command("trash")
 internal fun cmd(player: Player){
     player.openInventory(Bukkit.createInventory(null, config.inventorySize, config.inventoryName))
 }
 
 @Serializable
-internal class Config(val inventorySize: Int = 27, val inventoryName: String = "Мусорка")
+internal class Config(val inventorySize: Int = 27, val inventoryName: String = "Trashcan")

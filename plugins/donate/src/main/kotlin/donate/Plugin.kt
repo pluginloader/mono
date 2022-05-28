@@ -33,8 +33,8 @@ private lateinit var donateWithError: Provider<DonateWithError>
 private lateinit var coupon: Provider<Coupon>
 
 @Load
-internal fun load(plugin: LoaderPlugin){
-    donate = plugin.registerProvider(Donate::class)
-    donateWithError = plugin.registerProvider(DonateWithError::class)
-    coupon = plugin.registerProvider(Coupon::class)
+internal fun LoaderPlugin.load(){
+    donate = registerProvider(Donate::class)
+    donateWithError = registerProvider(DonateWithError::class)
+    coupon = registerProvider(Coupon::class)
 }

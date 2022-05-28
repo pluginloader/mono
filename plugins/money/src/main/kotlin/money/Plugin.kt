@@ -39,8 +39,8 @@ interface Money{
 private lateinit var provider: Provider<Money>
 
 @Load
-internal fun load(plugin: Plugin){
-    provider = plugin.registerProvider(Money::class, VaultMoney())
+internal fun Plugin.load(){
+    provider = registerProvider(Money::class, VaultMoney())
 }
 
 private class VaultMoney: Money{
